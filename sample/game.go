@@ -1,8 +1,22 @@
 package main
 
 import (
+	"image"
+	"log"
+
+	_ "image/png"
+
+	"golang.org/x/mobile/asset"
 	"golang.org/x/mobile/exp/f32"
 	"golang.org/x/mobile/exp/sprite"
+	"golang.org/x/mobile/exp/sprite/clock"
+)
+
+const (
+	tileWidth, tileHeight = 16, 16 // 各タイルの幅と高さ
+	tilesX, tilesY        = 16, 16 // 水平方向のタイルの数
+
+	gopherTile = 1 // gopher が描かれるタイル (0-indexed)
 )
 
 type Game struct {
@@ -14,6 +28,8 @@ func NewGame() *Game {
 }
 
 func (g *Game) Scene(eng sprite.Engine) *sprite.Node {
+	texs := loadTextures(eng)
+
 	scene = &sprite.Node{} // sceneのルートノードを生成
 	eng.Register(scene)    // Engineオブジェクトにルートノードを登録
 	// ルートの初期位置やスケールを設定する
@@ -21,5 +37,55 @@ func (g *Game) Scene(eng sprite.Engine) *sprite.Node {
 		{1, 0, 0},
 		{0, 1, 0},
 	})
+
+	newNode := func(fn arrangerFunc) {
+		n := &sprite.Node{Arranger: arrangerFunc(fn)}
+		eng.Register(n)
+		scene.AppendChild(n)
+	}
+
+	// The gopher.
+	newNode(func(eng sprite.Engine, n *sprite.Node, t clock.Time) {
+		eng.SetSubTex(n, texs[texGopher])
+		eng.SetTransform(n, f32.Affine{
+			{tileWidth, 0, tileWidth * gopherTile},
+			{0, tileHeight, 0},
+		})
+	})
+
 	return scene
+}
+
+type arrangerFunc func(e sprite.Engine, n *sprite.Node, t clock.Time)
+
+func (a arrangerFunc) Arrange(e sprite.Engine, n *sprite.Node, t clock.Time) {
+	a(e, n, t)
+}
+
+const (
+	texGopher = iota
+)
+
+func loadTextures(eng sprite.Engine) []sprite.SubTex {
+	a, err := asset.Open("placeholder-sprites.png")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer a.Close() // 処理が終わったらCloseする
+
+	m, _, err := image.Decode(a)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	t, err := eng.LoadTexture(m)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	const n = 128
+	return []sprite.SubTex{
+		texGopher: sprite.SubTex{t, image.Rect(1+0, 0, n-1, n)},
+	}
+
 }
