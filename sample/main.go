@@ -7,7 +7,6 @@ import (
 	"golang.org/x/mobile/event/lifecycle"
 	"golang.org/x/mobile/event/paint"
 	"golang.org/x/mobile/event/size"
-	"golang.org/x/mobile/exp/f32"
 	"golang.org/x/mobile/exp/gl/glutil"
 	"golang.org/x/mobile/exp/sprite"
 	"golang.org/x/mobile/exp/sprite/clock"
@@ -21,7 +20,8 @@ func main() {
 		/**
 		 sizeについて
 		 - 画面に変更があった場合のEvent
-		 - アプリ起動時に1度はpaint.Eventが発生する前に必ず呼ばれる
+		 - アプリ起動時にpaint.Eventが発生する前に1度必ず呼ばれる
+		 - サイズ情報が格納されている
 		**/
 		var sz size.Event
 		for e := range a.Events() {
@@ -41,10 +41,13 @@ func main() {
 			case size.Event:
 				sz = e
 			case paint.Event:
+				// OpenGLとOSからの描画イベントは無視する
 				if glctx == nil || e.External {
 					continue
 				}
+				// シーングラフを構築し、描画
 				onPaint(glctx, sz)
+				// 最終的に画面に出力
 				a.Publish()
 				a.Send(paint.Event{}) // keep animating
 			}
@@ -57,25 +60,22 @@ var (
 	images    *glutil.Images
 	eng       sprite.Engine
 	scene     *sprite.Node
+	game      *Game
 )
 
 // 開始時点で呼ばれる関数なので、Sprite Engineを初期化する
 func onStart(glctx gl.Context) {
 	images = glutil.NewImages(glctx) //OpenGLのContextからImageオブジェクトを生成
 	eng = glsprite.Engine(images)    // Engineオブジェクトを生成する
-	scene = &sprite.Node{}           // sceneのルートノードを生成
-	eng.Register(scene)              // Engineオブジェクトにルートノードを登録
-	// ルートの初期位置やスケールを設定する
-	eng.SetTransform(scene, f32.Affine{
-		{1, 0, 0},
-		{0, 1, 0},
-	})
+	game = NewGame()
+	scene = game.Scene(eng)
 }
 
 // エンジンオブジェクトとテクスチャを破棄する
 func onStop() {
 	eng.Release()
 	images.Release()
+	game = nil
 }
 
 func onPaint(glctx gl.Context, sz size.Event) {
