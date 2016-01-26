@@ -21,6 +21,7 @@ const (
 
 	initScrollV = 1     // 垂直方向の初期値
 	scrollA     = 0.001 // 加速度
+	gravity     = 0.1   // 重力
 
 	groundChangeProb = 5                                  // 地面の高さが変わる確率（1/probabilityで変わる）
 	groundMin        = tileHeight * (tilesY - 2*tilesY/5) // 地面の変化の最小値
@@ -29,9 +30,13 @@ const (
 )
 
 type Game struct {
+	gopher struct {
+		y float32 // 垂直方向のオフセット
+		v float32 // 速度
+	}
 	scroll struct {
-		x float32 //水平方向のオフセット
-		v float32 // 垂直方向
+		x float32 // 水平方向のオフセット
+		v float32 // 速度
 	}
 	groundY  [tilesX + 3]float32 // 地面のX座標。tilesXの数+定数分のサイズのfloat32配列を用意する
 	lastCalc clock.Time          // 最後にフレームを計算した時間
@@ -45,6 +50,8 @@ func NewGame() *Game {
 
 // ゲームの初期化
 func (g *Game) reset() {
+	g.gopher.y = 0
+	g.gopher.v = 0
 	g.scroll.x = 0
 	g.scroll.v = initScrollV
 	for i := range g.groundY {
@@ -96,7 +103,7 @@ func (g *Game) Scene(eng sprite.Engine) *sprite.Node {
 		eng.SetSubTex(n, texs[texGopher])
 		eng.SetTransform(n, f32.Affine{
 			{tileWidth, 0, tileWidth * gopherTile},
-			{0, tileHeight, 0},
+			{0, tileHeight, g.gopher.y},
 		})
 	})
 
@@ -150,6 +157,7 @@ func (g *Game) Update(now clock.Time) {
 
 func (g *Game) calcFrame() {
 	// そのフレームでのゲーム状態を計算する
+	g.calcGopher()
 	g.calcScroll()
 }
 
@@ -164,6 +172,14 @@ func (g *Game) calcScroll() {
 	for g.scroll.x > tileWidth {
 		g.newGroundTile()
 	}
+}
+
+func (g *Game) calcGopher() {
+	// 速度を計算
+	g.gopher.v += gravity
+
+	// オフセットを計算
+	g.gopher.y += g.gopher.v
 }
 
 func (g *Game) newGroundTile() {
