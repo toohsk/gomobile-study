@@ -22,7 +22,8 @@ const (
 )
 
 type Game struct {
-	groundY [tilesX + 3]float32 // 地面のX座標。tilesXの数+定数分のサイズのfloat32配列を用意する
+	groundY  [tilesX + 3]float32 // 地面のX座標。tilesXの数+定数分のサイズのfloat32配列を用意する
+	lastCalc clock.Time          // 最後にフレームを計算した時間
 }
 
 func NewGame() *Game {
@@ -114,4 +115,15 @@ func loadTextures(eng sprite.Engine) []sprite.SubTex {
 		texGround: sprite.SubTex{t, image.Rect(1+n*2, 0, n*3-1, n)}, //splite画像の左からn-1番目のテクスチャを切り出す
 	}
 
+}
+
+func (g *Game) Update(now clock.Time) {
+	// Compute game states up to now
+	for ; g.lastCalc < now; g.lastCalc++ {
+		g.calcFrame()
+	}
+}
+
+func (g *Game) calcFrame() {
+	// そのフレームでのゲーム状態を計算する
 }

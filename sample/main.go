@@ -82,5 +82,6 @@ func onPaint(glctx gl.Context, sz size.Event) {
 	glctx.ClearColor(1, 1, 1, 1)                                // クリアする色
 	glctx.Clear(gl.COLOR_BUFFER_BIT)                            // 塗りつぶし？
 	now := clock.Time(time.Since(startTime) * 60 / time.Second) // 60FramePerSecで計算し、現在のフレームを計算する
+	game.Update(now)
 	eng.Render(scene, now, sz)
 }
