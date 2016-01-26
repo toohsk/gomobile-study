@@ -180,6 +180,8 @@ func (g *Game) calcGopher() {
 
 	// オフセットを計算
 	g.gopher.y += g.gopher.v
+
+	g.clampToGround()
 }
 
 func (g *Game) newGroundTile() {
@@ -199,4 +201,20 @@ func (g *Game) nextGroundY() float32 {
 		return (groundMax-groundMin)*rand.Float32() + groundMin
 	}
 	return prev
+}
+
+func (g *Game) clampToGround() {
+	// gopherが立っている地面の位置を計算する
+	minY := g.groundY[gopherTile]
+	if y := g.groundY[gopherTile+1]; y < minY {
+		minY = y
+	}
+
+	// gopherが地中に抜けるのを防ぐ
+	maxGopherY := minY - tileHeight
+	if g.gopher.y >= maxGopherY {
+		g.gopher.v = 0
+		g.gopher.y = maxGopherY
+	}
+
 }
