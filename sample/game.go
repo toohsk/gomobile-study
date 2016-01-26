@@ -3,6 +3,7 @@ package main
 import (
 	"image"
 	"log"
+	"math/rand"
 
 	_ "image/png"
 
@@ -18,7 +19,10 @@ const (
 
 	gopherTile = 1 // gopher が描かれるタイル (0-indexed)
 
-	initGroundY = tileHeight * (tilesY - 1) // 地面のY座標
+	groundChangeProb = 5                                  // 地面の高さが変わる確率（1/probabilityで変わる）
+	groundMin        = tileHeight * (tilesY - 2*tilesY/5) // 地面の変化の最小値
+	groundMax        = tileHeight * tilesY                // 地面の変化の最大値
+	initGroundY      = tileHeight * (tilesY - 1)          // 地面のY座標
 )
 
 type Game struct {
@@ -126,4 +130,30 @@ func (g *Game) Update(now clock.Time) {
 
 func (g *Game) calcFrame() {
 	// そのフレームでのゲーム状態を計算する
+	g.calcScroll()
+}
+
+func (g *Game) calcScroll() {
+	// 1秒あたり3つの地面タイルを作成する
+	if g.lastCalc%20 == 0 {
+		g.newGroundTile()
+	}
+}
+
+func (g *Game) newGroundTile() {
+	// 次の地面のオフセットを計算する
+	next := g.nextGroundY()
+
+	// 地面とを左に移動する
+	copy(g.groundY[:], g.groundY[1:])
+	g.groundY[len(g.groundY)-1] = next
+}
+
+func (g *Game) nextGroundY() float32 {
+
+	prev := g.groundY[len(g.groundY)-1]
+	if change := rand.Intn(groundChangeProb) == 0; change {
+		return (groundMax-groundMin)*rand.Float32() + groundMin
+	}
+	return prev
 }
