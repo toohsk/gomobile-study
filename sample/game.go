@@ -64,11 +64,20 @@ func (g *Game) Scene(eng sprite.Engine) *sprite.Node {
 	// 地面を描画するメソッド
 	for i := range g.groundY {
 		i := i
+		// 地表の描画
 		newNode(func(eng sprite.Engine, n *sprite.Node, t clock.Time) {
 			eng.SetSubTex(n, texs[texGround]) //texGroundのテクスチャを使う
 			eng.SetTransform(n, f32.Affine{
 				{tileWidth, 0, float32(i) * tileWidth},
 				{0, tileHeight, g.groundY[i]}, //地面を描画する
+			})
+		})
+		// 地中の描画
+		newNode(func(eng sprite.Engine, n *sprite.Node, t clock.Time) {
+			eng.SetSubTex(n, texs[texEarth])
+			eng.SetTransform(n, f32.Affine{
+				{tileWidth, 0, float32(i) * tileWidth},
+				{0, tileHeight * tilesY, g.groundY[i] + tileHeight},
 			})
 		})
 	}
@@ -94,6 +103,7 @@ func (a arrangerFunc) Arrange(e sprite.Engine, n *sprite.Node, t clock.Time) {
 const (
 	texGopher = iota
 	texGround
+	texEarth
 )
 
 func loadTextures(eng sprite.Engine) []sprite.SubTex {
@@ -117,6 +127,7 @@ func loadTextures(eng sprite.Engine) []sprite.SubTex {
 	return []sprite.SubTex{
 		texGopher: sprite.SubTex{t, image.Rect(1+0, 0, n-1, n)},     //splite画像の一番左の青色のテクスチャを切り出す
 		texGround: sprite.SubTex{t, image.Rect(1+n*2, 0, n*3-1, n)}, //splite画像の左からn-1番目のテクスチャを切り出す
+		texEarth:  sprite.SubTex{t, image.Rect(1+n*5, 0, n*6-1, n)}, //splite画像の左からn-1番目のテクスチャを切り出す
 	}
 
 }
