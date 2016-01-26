@@ -22,7 +22,7 @@ const (
 )
 
 type Game struct {
-	groundY [tilesX + 3]float32 // 地面のX座標
+	groundY [tilesX + 3]float32 // 地面のX座標。tilesXの数+定数分のサイズのfloat32配列を用意する
 }
 
 func NewGame() *Game {
@@ -34,7 +34,7 @@ func NewGame() *Game {
 // ゲームの初期化
 func (g *Game) reset() {
 	for i := range g.groundY {
-		g.groundY[i] = initGroundY
+		g.groundY[i] = initGroundY // 地面のX座標分初期化する。
 	}
 }
 
@@ -56,13 +56,14 @@ func (g *Game) Scene(eng sprite.Engine) *sprite.Node {
 	}
 
 	// The ground.
+	// 地面を描画するメソッド
 	for i := range g.groundY {
 		i := i
 		newNode(func(eng sprite.Engine, n *sprite.Node, t clock.Time) {
-			eng.SetSubTex(n, texs[texGround])
+			eng.SetSubTex(n, texs[texGround]) //texGroundのテクスチャを使う
 			eng.SetTransform(n, f32.Affine{
 				{tileWidth, 0, float32(i) * tileWidth},
-				{0, tileHeight, g.groundY[i]},
+				{0, tileHeight, g.groundY[i]}, //地面を描画する
 			})
 		})
 	}
@@ -109,8 +110,8 @@ func loadTextures(eng sprite.Engine) []sprite.SubTex {
 
 	const n = 128
 	return []sprite.SubTex{
-		texGopher: sprite.SubTex{t, image.Rect(1+0, 0, n-1, n)},
-		texGround: sprite.SubTex{t, image.Rect(1+n*3, 0, n*4-1, n)},
+		texGopher: sprite.SubTex{t, image.Rect(1+0, 0, n-1, n)},     //splite画像の一番左の青色のテクスチャを切り出す
+		texGround: sprite.SubTex{t, image.Rect(1+n*2, 0, n*3-1, n)}, //splite画像の左からn-1番目のテクスチャを切り出す
 	}
 
 }
