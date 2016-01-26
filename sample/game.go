@@ -19,6 +19,9 @@ const (
 
 	gopherTile = 1 // gopher が描かれるタイル (0-indexed)
 
+	initScrollV = 1     // 垂直方向の初期値
+	scrollA     = 0.001 // 加速度
+
 	groundChangeProb = 5                                  // 地面の高さが変わる確率（1/probabilityで変わる）
 	groundMin        = tileHeight * (tilesY - 2*tilesY/5) // 地面の変化の最小値
 	groundMax        = tileHeight * tilesY                // 地面の変化の最大値
@@ -26,6 +29,10 @@ const (
 )
 
 type Game struct {
+	scroll struct {
+		x float32 //水平方向のオフセット
+		v float32 // 垂直方向
+	}
 	groundY  [tilesX + 3]float32 // 地面のX座標。tilesXの数+定数分のサイズのfloat32配列を用意する
 	lastCalc clock.Time          // 最後にフレームを計算した時間
 }
@@ -38,6 +45,8 @@ func NewGame() *Game {
 
 // ゲームの初期化
 func (g *Game) reset() {
+	g.scroll.x = 0
+	g.scroll.v = initScrollV
 	for i := range g.groundY {
 		g.groundY[i] = initGroundY // 地面のX座標分初期化する。
 	}
@@ -68,7 +77,7 @@ func (g *Game) Scene(eng sprite.Engine) *sprite.Node {
 		newNode(func(eng sprite.Engine, n *sprite.Node, t clock.Time) {
 			eng.SetSubTex(n, texs[texGround]) //texGroundのテクスチャを使う
 			eng.SetTransform(n, f32.Affine{
-				{tileWidth, 0, float32(i) * tileWidth},
+				{tileWidth, 0, float32(i)*tileWidth - g.scroll.x},
 				{0, tileHeight, g.groundY[i]}, //地面を描画する
 			})
 		})
@@ -145,8 +154,14 @@ func (g *Game) calcFrame() {
 }
 
 func (g *Game) calcScroll() {
-	// 1秒あたり3つの地面タイルを作成する
-	if g.lastCalc%20 == 0 {
+	// 垂直方向の計算
+	g.scroll.v += scrollA
+
+	// オフセットの計算
+	g.scroll.x += g.scroll.v
+
+	// 新しい地面が必要な場合作成する
+	for g.scroll.x > tileWidth {
 		g.newGroundTile()
 	}
 }
@@ -156,6 +171,7 @@ func (g *Game) newGroundTile() {
 	next := g.nextGroundY()
 
 	// 地面とを左に移動する
+	g.scroll.x -= tileWidth
 	copy(g.groundY[:], g.groundY[1:])
 	g.groundY[len(g.groundY)-1] = next
 }
