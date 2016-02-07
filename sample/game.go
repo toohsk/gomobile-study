@@ -22,6 +22,7 @@ const (
 	initScrollV = 1     // 垂直方向の初期値
 	scrollA     = 0.001 // 加速度
 	gravity     = 0.1   // 重力
+	jumpV       = -5
 
 	groundChangeProb = 5                                  // 地面の高さが変わる確率（1/probabilityで変わる）
 	groundMin        = tileHeight * (tilesY - 2*tilesY/5) // 地面の変化の最小値
@@ -146,6 +147,17 @@ func loadTextures(eng sprite.Engine) []sprite.SubTex {
 		texEarth:  sprite.SubTex{t, image.Rect(1+n*5, 0, n*6-1, n)}, //splite画像の左からn-1番目のテクスチャを切り出す
 	}
 
+}
+
+// プレスイベントの処理
+func (g *Game) Press(down bool) {
+	if down {
+		g.gopher.v = jumpV
+	} else {
+		if g.gopher.v < 0 {
+			g.gopher.v = 0
+		}
+	}
 }
 
 func (g *Game) Update(now clock.Time) {
